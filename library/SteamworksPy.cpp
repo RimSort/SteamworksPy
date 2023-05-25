@@ -480,7 +480,7 @@ SW_PY const char *GetAppInstallDir(AppId_t appID) {
     char *buffer = new char[folderBuffer];
     SteamApps()->GetAppInstallDir(appID, (char *) buffer, folderBuffer);
     const char *appDir = buffer;
-    delete buffer;
+    delete[] buffer;
     return appDir;
 }
 
@@ -1016,7 +1016,7 @@ SW_PY const char *GetUserDataFolder() {
     char *buffer = new char[bufferSize];
     SteamUser()->GetUserDataFolder((char *) buffer, bufferSize);
     char *data_path = buffer;
-    delete buffer;
+    delete[] buffer;
     return data_path;
 }
 
