@@ -2,8 +2,8 @@
 *.dll
 *.so
 *.dylib
-!redist/windows/*.dll
-!redist/osx/*.dylib
-!redist/linux/*.so
+!steamworks/*.dll
+!steamworks/*.dylib
+!steamworks/*.so
 
 sdk/
