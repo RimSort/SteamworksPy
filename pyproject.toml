@@ -1,0 +1,17 @@
+[project]
+name = "steamworks"
+version = "1.6.2"
+description = "Interact with Steamworks API"
+requires-python = ">=3.9"
+dependencies = ["psutil==7.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = [
+  "steamworks/*.dll",
+  "steamworks/*.so",
+  "steamworks/*.dylib"
+]

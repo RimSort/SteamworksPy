@@ -6,15 +6,15 @@
 //
 // Include the Steamworks API header
 #if defined( _WIN32 )
-#include "sdk\steam\steam_api.h"
+#include "steam_api.h"
 #define SW_PY extern "C" __declspec(dllexport)
 #elif defined( __APPLE__ )
-#include "sdk/steam/steam_api.h"
+#include "steam_api.h"
 #include "TargetConditionals.h"
 #define SW_PY extern "C" __attribute__ ((visibility("default")))
 #elif defined( __linux__ )
 #include <cstdint>
-#include "sdk/steam/steam_api.h"
+#include "steam_api.h"
 #define SW_PY extern "C" __attribute__ ((visibility("default")))
 #else
 #error "Unsupported platform"

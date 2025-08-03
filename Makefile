@@ -10,11 +10,11 @@ WIN_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/win64
 LINUX_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/linux64
 MAC_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/osx
 
-WIN_OUT = build/SteamworksPy64.dll
-LINUX_OUT = build/SteamworksPy.so
-MAC_OUT_INTEL = build/SteamworksPy_x86_64.dylib
-MAC_OUT_ARM = build/SteamworksPy_arm64.dylib
-MAC_OUT = build/SteamworksPy.dylib
+WIN_OUT = steamworks/SteamworksPy64.dll
+LINUX_OUT = steamworks/SteamworksPy.so
+MAC_OUT_INTEL = steamworks/SteamworksPy_x86_64.dylib
+MAC_OUT_ARM = steamworks/SteamworksPy_arm64.dylib
+MAC_OUT = steamworks/SteamworksPy.dylib
 
 WIN_LIB = $(WIN_REDIST)/steam_api64.lib
 WIN_DLL = $(WIN_REDIST)/steam_api64.dll
