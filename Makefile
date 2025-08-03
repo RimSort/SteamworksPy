@@ -10,11 +10,12 @@ WIN_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/win64
 LINUX_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/linux64
 MAC_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/osx
 
-WIN_OUT = steamworks/SteamworksPy64.dll
-LINUX_OUT = steamworks/SteamworksPy.so
-MAC_OUT_INTEL = steamworks/SteamworksPy_x86_64.dylib
-MAC_OUT_ARM = steamworks/SteamworksPy_arm64.dylib
-MAC_OUT = steamworks/SteamworksPy.dylib
+OUT_DIR = libs
+WIN_OUT = $(OUT_DIR)/SteamworksPy64.dll
+LINUX_OUT = $(OUT_DIR)/SteamworksPy.so
+MAC_OUT_INTEL = $(OUT_DIR)/SteamworksPy_x86_64.dylib
+MAC_OUT_ARM = $(OUT_DIR)/SteamworksPy_arm64.dylib
+MAC_OUT = $(OUT_DIR)/SteamworksPy.dylib
 
 WIN_LIB = $(WIN_REDIST)/steam_api64.lib
 WIN_DLL = $(WIN_REDIST)/steam_api64.dll
@@ -30,43 +31,37 @@ macos: $(MAC_OUT)
 macos_intel: $(MAC_OUT_INTEL)
 macos_arm: $(MAC_OUT_ARM)
 
-
-
 $(WIN_OUT): $(STEAMWORKSPY_SRC) $(WIN_LIB) $(WIN_DLL)
 	@echo "[*] Building for Windows (MinGW-w64 g++ required)"
-	@mkdir -p build
+	@mkdir -p $(OUT_DIR)
 	g++ -std=c++11 -shared -o $@ $(STEAMWORKSPY_SRC) -I$(STEAMWORKS_INC) $(WIN_LIB)
-	cp $(WIN_DLL) build/
-
-
+	cp $(WIN_DLL) $(OUT_DIR)/
+	cp $(WIN_LIB) $(OUT_DIR)/
 
 $(LINUX_OUT): $(STEAMWORKSPY_SRC) $(LINUX_LIB)
 	@echo "[*] Building for Linux"
-	@mkdir -p build
+	@mkdir -p $(OUT_DIR)
 	g++ -std=c++11 -shared -fPIC -o $@ $(STEAMWORKSPY_SRC) -I$(STEAMWORKS_INC) $(LINUX_LIB)
-
-
-
 
 $(MAC_OUT_INTEL): $(STEAMWORKSPY_SRC) $(MAC_LIB)
 	@echo "[*] Building for macOS Intel (x86_64)"
-	@mkdir -p build
+	@mkdir -p $(OUT_DIR)
 	g++ -std=c++11 -dynamiclib -arch x86_64 -o $@ $(STEAMWORKSPY_SRC) -I$(STEAMWORKS_INC) $(MAC_LIB)
+	cp -n $(MAC_LIB) $(OUT_DIR)/
 
 $(MAC_OUT_ARM): $(STEAMWORKSPY_SRC) $(MAC_LIB)
 	@echo "[*] Building for macOS ARM (arm64)"
-	@mkdir -p build
+	@mkdir -p ${OUT_DIR}
 	g++ -std=c++11 -dynamiclib -arch arm64 -o $@ $(STEAMWORKSPY_SRC) -I$(STEAMWORKS_INC) $(MAC_LIB)
+	cp -n $(MAC_LIB) $(OUT_DIR)/
 
 $(MAC_OUT): $(MAC_OUT_INTEL) $(MAC_OUT_ARM)
 	@echo "[*] Creating universal macOS binary"
 	lipo -create -output $@ $(MAC_OUT_INTEL) $(MAC_OUT_ARM)
-
-
+	cp -n $(MAC_LIB) $(OUT_DIR)/
 
 clean:
-	rm -rf _build_* build/*
-
+	rm -rf _build_* $(OUT_DIR)/*
 
 help:
 	@echo "Usage: make [windows|linux|macos|macos_intel|macos_arm|clean]"
