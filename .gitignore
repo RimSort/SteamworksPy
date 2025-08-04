@@ -2,8 +2,8 @@
 *.dll
 *.so
 *.dylib
-!libs/*.dll
-!libs/*.dylib
-!libs/*.so
+!steamworks/*.dll
+!steamworks/*.dylib
+!steamworks/*.so
 
 sdk/
