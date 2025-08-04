@@ -16,8 +16,10 @@ packages = ["steamworks"]
 
 [tool.hatch.build]
 include = [
-  "libs/*.dll",
-  "libs/*.so",
-  "libs/*.dylib",
-  "libs/*.lib"
+  "steamworks/*.py",
+  "steamworks/**/*.py",
+  "steamworks/*.dll",
+  "steamworks/*.so",
+  "steamworks/*.dylib",
+  "steamworks/*.lib"
 ]

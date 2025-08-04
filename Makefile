@@ -10,7 +10,7 @@ WIN_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/win64
 LINUX_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/linux64
 MAC_REDIST = $(STEAMWORKS_SDK)/redistributable_bin/osx
 
-OUT_DIR = libs
+OUT_DIR = steamworks
 WIN_OUT = $(OUT_DIR)/SteamworksPy64.dll
 LINUX_OUT = $(OUT_DIR)/SteamworksPy.so
 MAC_OUT_INTEL = $(OUT_DIR)/SteamworksPy_x86_64.dylib
@@ -61,7 +61,11 @@ $(MAC_OUT): $(MAC_OUT_INTEL) $(MAC_OUT_ARM)
 	cp -n $(MAC_LIB) $(OUT_DIR)/
 
 clean:
-	rm -rf _build_* $(OUT_DIR)/*
+	rm -rf _build_*
+	rm -rf $(OUT_DIR)/*.lib
+	rm -rf $(OUT_DIR)/*.dll
+	rm -rf $(OUT_DIR)/*.so
+	rm -rf $(OUT_DIR)/*.dylib
 
 help:
 	@echo "Usage: make [windows|linux|macos|macos_intel|macos_arm|clean]"
