@@ -45,7 +45,7 @@ class STEAMWORKS(object):
     _arch = steamworks_util.get_arch()
     _native_supported_platforms = ["linux", "linux2", "darwin", "win32"]
 
-    def __init__(self, supported_platforms: list = [], _libs=None) -> None:
+    def __init__(self, supported_platforms: list = [], _libs: str | None = None) -> None:
         self._supported_platforms = supported_platforms
         self._loaded = False
         self._cdll = None
@@ -118,7 +118,7 @@ class STEAMWORKS(object):
         else:
             # This case is theoretically unreachable
             raise UnsupportedPlatformException(f'"{platform}" is not being supported')
-        if self._libs and os.path.exists(os.path.join(self._libs, library_file_name)):
+        if self._libs and os.path.isfile(os.path.join(self._libs, library_file_name)):
             library_path = os.path.join(self._libs, library_file_name)
         elif os.environ.get("SWPY_PATH") and os.path.exists(
             os.path.join(os.environ["SWPY_PATH"], library_file_name)
