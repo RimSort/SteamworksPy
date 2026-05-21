@@ -2,18 +2,16 @@ from ctypes import *
 
 
 class FindLeaderboardResult_t(Structure):
-    """ Represents the STEAMWORKS LeaderboardFindResult_t call result type """
-    _fields_ = [
-        ("leaderboardHandle", c_uint64),
-        ("leaderboardFound", c_uint32)
-    ]
+    """Represents the STEAMWORKS LeaderboardFindResult_t call result type"""
+
+    _fields_ = [("leaderboardHandle", c_uint64), ("leaderboardFound", c_uint32)]
 
 
 class CreateItemResult_t(Structure):
     _fields_ = [
         ("result", c_int),
         ("publishedFileId", c_uint64),
-        ("userNeedsToAcceptWorkshopLegalAgreement", c_bool)
+        ("userNeedsToAcceptWorkshopLegalAgreement", c_bool),
     ]
 
 
@@ -21,15 +19,12 @@ class SubmitItemUpdateResult_t(Structure):
     _fields_ = [
         ("result", c_int),
         ("userNeedsToAcceptWorkshopLegalAgreement", c_bool),
-        ("publishedFileId", c_uint64)
+        ("publishedFileId", c_uint64),
     ]
 
 
 class ItemInstalled_t(Structure):
-    _fields_ = [
-        ("appId", c_uint32),
-        ("publishedFileId", c_uint64)
-    ]
+    _fields_ = [("appId", c_uint32), ("publishedFileId", c_uint64)]
 
 
 class GetAppDependenciesResult(Structure):
@@ -38,7 +33,7 @@ class GetAppDependenciesResult(Structure):
         ("publishedFileId", c_uint64),
         ("array_app_dependencies", POINTER(c_int32)),
         ("array_num_app_dependencies", c_int32),
-        ("total_num_app_dependencies", c_int32)
+        ("total_num_app_dependencies", c_int32),
     ]
 
     def get_app_dependencies_list(self) -> list:
@@ -51,10 +46,8 @@ class GetAppDependenciesResult(Structure):
 
 
 class SubscriptionResult(Structure):
-    _fields_ = [
-        ("result", c_int32),
-        ("publishedFileId", c_uint64)
-    ]
+    _fields_ = [("result", c_int32), ("publishedFileId", c_uint64)]
+
 
 
 class SteamUGCQueryCompleted_t(Structure):
@@ -99,36 +92,22 @@ class SteamUGCDetails_t(Structure):
 
 
 class MicroTxnAuthorizationResponse_t(Structure):
-    _fields_ = [
-        ("appId", c_uint32),
-        ("orderId", c_uint64),
-        ("authorized", c_bool)
-    ]
+    _fields_ = [("appId", c_uint32), ("orderId", c_uint64), ("authorized", c_bool)]
 
 
 class GetAppDependenciesResult_t(Structure):
-    """Result from GetAppDependencies call
-
-    Returns app dependencies associated with a workshop item.
-    These are "soft" dependencies shown on the web.
-    """
     _fields_ = [
-        ("result", c_int),                      # EResult
-        ("publishedFileId", c_uint64),          # PublishedFileId_t
-        ("rgAppIDs", c_uint32 * 32),            # Array of AppId_t (max 32)
-        ("numAppDependencies", c_uint32),       # Count returned in this struct
-        ("totalNumAppDependencies", c_uint32)   # Total dependencies found
+        ("result", c_int),
+        ("publishedFileId", c_uint64),
+        ("rgAppIDs", c_uint32 * 32),
+        ("numAppDependencies", c_uint32),
+        ("totalNumAppDependencies", c_uint32),
     ]
 
 
 class DownloadItemResult_t(Structure):
-    """Result from DownloadItem call
-
-    Callback fired when workshop item has been downloaded.
-    Contains the app ID associated with the workshop item.
-    """
     _fields_ = [
-        ("appID", c_uint32),                    # AppId_t - associated app
-        ("publishedFileId", c_uint64),          # PublishedFileId_t
-        ("result", c_int)                       # EResult
+        ("appID", c_uint32),
+        ("publishedFileId", c_uint64),
+        ("result", c_int),
     ]
