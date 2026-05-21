@@ -80,14 +80,6 @@ class SteamUserStats(object):
         return self.steam.ResetAllStats(achievements)
 
 
-    def RequestCurrentStats(self) -> bool:
-        """Request all statistics and achievements from Steam servers
-
-        :return: bool
-        """
-        return self.steam.RequestCurrentStats()
-
-
     def SetAchievement(self, name: str) -> bool:
         """Set a given achievement
 
