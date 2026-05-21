@@ -313,10 +313,6 @@ SW_PY int SteamInit() {
     else if (!SteamUser()->BLoggedOn()) {
         status = ERR_NO_CONNECTION;
     }
-    // Steam is connected and active, so load the stats and achievements
-    if (status == OK && SteamUserStats() != NULL) {
-        SteamUserStats()->RequestCurrentStats();
-    }
     // Return the Steamworks status
     return status;
 }
@@ -702,18 +698,18 @@ SW_PY uint64_t GetCurrentActionSet(uint64_t controllerHandle){
     }
     return (uint64_t) SteamInput()->GetCurrentActionSet((InputHandle_t) controllerHandle);
 }
-// Get the input type (device model) for the specified controller. 
+// Get the input type (device model) for the specified controller.
 SW_PY uint64_t GetInputTypeForHandle(uint64_t controllerHandle){
     if(SteamInput() == NULL){
         return 0;
     }
-    return (uint64_t) SteamInput()->GetInputTypeForHandle((ControllerHandle_t)controllerHandle);
+    return (uint64_t) SteamInput()->GetInputTypeForHandle((InputHandle_t)controllerHandle);
 }
 // Returns the current state of the supplied digital game action.
 SW_PY InputDigitalActionData_t GetDigitalActionData(uint64_t controllerHandle, uint64_t digitalActionHandle){
 	InputDigitalActionData_t data;
 	if(SteamInput() != NULL){
-		data = SteamInput()->GetDigitalActionData((ControllerHandle_t)controllerHandle, (ControllerDigitalActionHandle_t)digitalActionHandle);
+		data = SteamInput()->GetDigitalActionData((InputHandle_t)controllerHandle, (InputDigitalActionHandle_t)digitalActionHandle);
 	}
 	return data;
 }
@@ -742,7 +738,7 @@ SW_PY int GetGamepadIndexForController(uint64_t controllerHandle){
     if(SteamInput() == NULL){
         return -1;
     }
-    return SteamInput()->GetGamepadIndexForController((ControllerHandle_t) controllerHandle);
+    return SteamInput()->GetGamepadIndexForController((InputHandle_t) controllerHandle);
 }
 
 // Returns raw motion data for the specified controller.
@@ -786,7 +782,7 @@ SW_PY bool ShowBindingPanel(uint64_t controllerHandle){
     if(SteamInput()== NULL){
         return false;
     }
-    return SteamInput()->ShowBindingPanel((ControllerHandle_t) controllerHandle);
+    return SteamInput()->ShowBindingPanel((InputHandle_t) controllerHandle);
 }
 
 // Stop SteamControllers interface.
@@ -801,7 +797,7 @@ SW_PY void TriggerVibration(uint64_t controllerHandle, uint16_t leftSpeed, uint1
     if(SteamInput()== NULL){
         return;
     }
-    SteamInput()->TriggerVibration((ControllerHandle_t) controllerHandle, (unsigned short)leftSpeed, (unsigned short)rightSpeed);
+    SteamInput()->TriggerVibration((InputHandle_t) controllerHandle, (unsigned short)leftSpeed, (unsigned short)rightSpeed);
 }
 
 /////////////////////////////////////////////////
@@ -1021,7 +1017,7 @@ SW_PY int GetAuthSessionTicket(char* buffer) {
         return 0;
     }
     uint32 size{};
-    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size);
+    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size, NULL);
     return size;
 }
 
@@ -1083,13 +1079,6 @@ SW_PY bool ResetAllStats(bool achievesToo) {
         return false;
     }
     return SteamUserStats()->ResetAllStats(achievesToo);
-}
-
-SW_PY bool RequestCurrentStats() {
-    if (SteamUser() == NULL) {
-        return false;
-    }
-    return SteamUserStats()->RequestCurrentStats();
 }
 
 SW_PY bool SetAchievement(const char *name) {

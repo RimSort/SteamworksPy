@@ -110,7 +110,6 @@ STEAMWORKS_METHODS = {
     "GetStatInt": {"restype": int},
     "GetStatFloat": {"restype": c_float},
     "ResetAllStats": {"restype": bool},
-    "RequestCurrentStats": {"restype": bool},
     "SetAchievement": {"restype": bool},
     "SetStatInt": {"restype": bool},
     "SetStatFloat": {"restype": bool},
