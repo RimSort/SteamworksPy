@@ -5,3 +5,5 @@
 !redist/windows/*.dll
 !redist/osx/*.dylib
 !redist/linux/*.so
+steamworks_sdk_*.zip
+library/sdk/
