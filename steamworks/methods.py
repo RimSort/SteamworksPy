@@ -191,10 +191,6 @@ STEAMWORKS_METHODS = {
         "argtypes": [MAKE_CALLBACK(None, structs.ItemInstalled_t)],
     },
     "Workshop_ClearItemInstalledCallback": {"restype": None},
-    "Workshop_SetGetAppDependenciesResultCallback": {
-        "restype": None,
-        "argtypes": [MAKE_CALLBACK(None, structs.GetAppDependenciesResult)],
-    },
     "Workshop_SetItemSubscribedCallback": {
         "restype": None,
         "argtypes": [MAKE_CALLBACK(None, structs.SubscriptionResult)],

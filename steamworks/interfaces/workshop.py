@@ -24,7 +24,6 @@ class SteamWorkshop(object):
     _RemoteStorageSubscribePublishedFileResult = None
     _RemoteStorageUnsubscribePublishedFileResult = None
     _SteamUGCQueryCompleted = None
-    _GetAppDependenciesResult = None
     _DownloadItemResult = None
 
     def __init__(self, steam: object):
@@ -71,18 +70,6 @@ class SteamWorkshop(object):
         """
         self._ItemInstalled = None
         self.steam.Workshop_ClearItemInstalledCallback()
-
-    def SetGetAppDependenciesResultCallback(self, callback: object) -> bool:
-        """Set callback for item GetAppDependencies
-
-        :param callback: callable
-        :return: bool
-        """
-        self._GetAppDependenciesResult = self._GetAppDependenciesResult_t(callback)
-        self.steam.Workshop_SetGetAppDependenciesResultCallback(
-            self._GetAppDependenciesResult
-        )
-        return True
 
     def SetItemSubscribedCallback(self, callback: object) -> bool:
         """Set callback for item subscribed
@@ -134,32 +121,6 @@ class SteamWorkshop(object):
             self.SetItemCreatedCallback(callback)
 
         self.steam.Workshop_CreateItem(app_id, filetype.value)
-
-    def GetAppDependencies(
-        self,
-        published_file_id: int,
-        callback: object = None,
-        override_callback: bool = False,
-    ) -> None:
-        """Get a list of AppID dependencies from a UGC (Workshop) item
-
-        :param published_file_id: int
-        :param callback: callable
-        :param override_callback: bool
-        :return:
-        """
-        if override_callback:
-            self.SetGetAppDependenciesResultCallback(callback)
-
-        elif callback and not self._GetAppDependenciesResult:
-            self.SetGetAppDependenciesResultCallback(callback)
-
-        if self._GetAppDependenciesResult is None:
-            raise SetupRequired(
-                "Call `SetGetAppDependenciesResultCallback` first or supply a `callback`"
-            )
-
-        self.steam.Workshop_GetAppDependencies(published_file_id)
 
     def SubscribeItem(
         self,
