@@ -58,6 +58,7 @@ STEAMWORKS_METHODS = {
     "ActivateGameOverlayToWebPage": {"restype": None, "argtypes": [c_char_p]},
     "ActivateGameOverlayToStore": {"restype": None, "argtypes": [c_uint32]},
     "ActivateGameOverlayInviteDialog": {"restype": None, "argtypes": [c_uint64]},
+    "SetInputActionManifestFilePath": {"restype": bool, "argtypes": [c_char_p]},
     "ActivateActionSet": {"restype": None, "argtypes": [c_uint64, c_uint64]},
     "GetActionSetHandle": {"restype": c_uint64, "argtypes": [c_char_p]},
     "GetAnalogActionHandle": {"restype": c_uint64, "argtypes": [c_char_p]},
@@ -180,7 +181,7 @@ STEAMWORKS_METHODS = {
             POINTER(c_uint32),
         ],
     },
-    "Workshop_GetAppDependencies": {"restype": bool, "argtypes": [c_uint64]},
+    "Workshop_GetAppDependencies": {"restype": None, "argtypes": [c_uint64]},
     "Workshop_GetItemDownloadInfo": {
         "restype": bool,
         "argtypes": [c_uint64, POINTER(c_uint64), POINTER(c_uint64)],
@@ -190,10 +191,6 @@ STEAMWORKS_METHODS = {
         "argtypes": [MAKE_CALLBACK(None, structs.ItemInstalled_t)],
     },
     "Workshop_ClearItemInstalledCallback": {"restype": None},
-    "Workshop_SetGetAppDependenciesResultCallback": {
-        "restype": None,
-        "argtypes": [MAKE_CALLBACK(None, structs.GetAppDependenciesResult)],
-    },
     "Workshop_SetItemSubscribedCallback": {
         "restype": None,
         "argtypes": [MAKE_CALLBACK(None, structs.SubscriptionResult)],
@@ -205,6 +202,28 @@ STEAMWORKS_METHODS = {
     "Workshop_SuspendDownloads": {"restype": None, "argtypes": [c_bool]},
     "Workshop_SubscribeItem": {"restype": None, "argtypes": [c_uint64]},
     "Workshop_UnsubscribeItem": {"restype": None, "argtypes": [c_uint64]},
+    "Workshop_CreateQueryUGCDetailsRequest": {
+        "restype": c_uint64,
+        "argtypes": [POINTER(c_uint64), c_uint32],
+    },
+    "Workshop_SetQueryCompletedCallback": {
+        "restype": None,
+        "argtypes": [MAKE_CALLBACK(None, structs.SteamUGCQueryCompleted_t)],
+    },
+    "Workshop_SendQueryUGCRequest": {"argtypes": [c_uint64]},
+    "Workshop_GetQueryUGCResult": {
+        "restype": bool,
+        "argtypes": [c_uint64, c_uint32, POINTER(structs.SteamUGCDetails_t)],
+    },
+    "Workshop_SetGetAppDependenciesCallback": {
+        "restype": None,
+        "argtypes": [MAKE_CALLBACK(None, structs.GetAppDependenciesResult_t)],
+    },
+    "Workshop_SetDownloadItemCallback": {
+        "restype": None,
+        "argtypes": [MAKE_CALLBACK(None, structs.DownloadItemResult_t)],
+    },
+    "Workshop_DownloadItem": {"restype": c_bool, "argtypes": [c_uint64, c_bool]},
     "MicroTxn_SetAuthorizationResponseCallback": {
         "restype": None,
         "argtypes": [MAKE_CALLBACK(None, structs.MicroTxnAuthorizationResponse_t)],

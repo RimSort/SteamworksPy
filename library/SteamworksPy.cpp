@@ -13,6 +13,7 @@
 #include "TargetConditionals.h"
 #define SW_PY extern "C" __attribute__ ((visibility("default")))
 #elif defined( __linux__ )
+#include <cstdint>
 #include "sdk/steam/steam_api.h"
 #define SW_PY extern "C" __attribute__ ((visibility("default")))
 #else
@@ -86,24 +87,18 @@ typedef void(*CreateItemResultCallback_t)(CreateItemResult_t);
 typedef void(*SubmitItemUpdateResultCallback_t)(SubmitItemUpdateResult_t);
 typedef void(*ItemInstalledCallback_t)(ItemInstalled_t);
 
-struct GetAppDependenciesResult {
-    std::int32_t result;
-    std::uint64_t publishedFileId;
-    std::uint32_t* array_app_dependencies;
-    std::uint32_t array_num_app_dependencies;
-    std::uint32_t total_num_app_dependencies;
-};
-
 struct SubscriptionResult {
 	std::int32_t result;
 	std::uint64_t publishedFileId;
 };
 
-typedef void(*GetAppDependenciesResultCallback_t)(GetAppDependenciesResult);
 typedef void(*RemoteStorageSubscribeFileResultCallback_t)(SubscriptionResult);
 typedef void(*RemoteStorageUnsubscribeFileResultCallback_t)(SubscriptionResult);
 typedef void(*LeaderboardFindResultCallback_t)(LeaderboardFindResult_t);
 typedef void(*MicroTxnAuthorizationResponseCallback_t)(MicroTxnAuthorizationResponse_t);
+typedef void(*SteamUGCQueryCompletedCallback_t)(SteamUGCQueryCompleted_t);
+typedef void(*GetAppDependenciesResultCallback_t)(GetAppDependenciesResult_t);
+typedef void(*DownloadItemResultCallback_t)(DownloadItemResult_t);
 
 //-----------------------------------------------
 // Workshop Class
@@ -116,12 +111,16 @@ public:
     GetAppDependenciesResultCallback_t _pyGetAppDependenciesCallback;
     RemoteStorageSubscribeFileResultCallback_t _pyItemSubscribedCallback;
     RemoteStorageUnsubscribeFileResultCallback_t _pyItemUnsubscribedCallback;
+    SteamUGCQueryCompletedCallback_t _pyQueryCompletedCallback;
+    DownloadItemResultCallback_t _pyDownloadItemCallback;
 
     CCallResult <Workshop, CreateItemResult_t> _itemCreatedCallback;
     CCallResult <Workshop, SubmitItemUpdateResult_t> _itemUpdatedCallback;
     CCallResult <Workshop, GetAppDependenciesResult_t> _getAppDependenciesCallback;
     CCallResult <Workshop, RemoteStorageSubscribePublishedFileResult_t> _itemSubscribedCallback;
     CCallResult <Workshop, RemoteStorageUnsubscribePublishedFileResult_t> _itemUnsubscribedCallback;
+    CCallResult <Workshop, SteamUGCQueryCompleted_t> _queryCompletedCallback;
+    CCallResult <Workshop, DownloadItemResult_t> _downloadItemCallback;
 
     CCallback <Workshop, ItemInstalled_t> _itemInstalledCallback;
 
@@ -143,16 +142,24 @@ public:
         _pyItemInstalledCallback = nullptr;
     }
 
-    void SetGetAppDependenciesResultCallback(GetAppDependenciesResultCallback_t callback) {
-        _pyGetAppDependenciesCallback = callback;
-    }
-
     void SetItemSubscribedCallback(RemoteStorageSubscribeFileResultCallback_t callback) {
         _pyItemSubscribedCallback = callback;
     }
 
     void SetItemUnsubscribedCallback(RemoteStorageUnsubscribeFileResultCallback_t callback) {
         _pyItemUnsubscribedCallback = callback;
+    }
+
+    void SetQueryCompletedCallback(SteamUGCQueryCompletedCallback_t callback) {
+        _pyQueryCompletedCallback = callback;
+    }
+
+    void SetGetAppDependenciesCallback(GetAppDependenciesResultCallback_t callback) {
+        _pyGetAppDependenciesCallback = callback;
+    }
+
+    void SetDownloadItemCallback(DownloadItemResultCallback_t callback) {
+        _pyDownloadItemCallback = callback;
     }
 
     void CreateItem(AppId_t consumerAppId, EWorkshopFileType fileType) {
@@ -166,11 +173,6 @@ public:
         _itemUpdatedCallback.Set(submitItemUpdateCall, this, &Workshop::OnItemUpdateSubmitted);
     }
 
-    void GetAppDependencies(PublishedFileId_t publishedFileID) {
-        SteamAPICall_t getAppDependenciesCall = SteamUGC()->GetAppDependencies(publishedFileID);
-        _getAppDependenciesCallback.Set(getAppDependenciesCall, this, &Workshop::OnGetAppDependencies);
-    }
-
     void SubscribeItem(PublishedFileId_t publishedFileID) {
         SteamAPICall_t subscribeItemCall = SteamUGC()->SubscribeItem(publishedFileID);
         _itemSubscribedCallback.Set(subscribeItemCall, this, &Workshop::OnItemSubscribed);
@@ -179,6 +181,22 @@ public:
     void UnsubscribeItem(PublishedFileId_t publishedFileID) {
         SteamAPICall_t unsubscribeItemCall = SteamUGC()->UnsubscribeItem(publishedFileID);
         _itemUnsubscribedCallback.Set(unsubscribeItemCall, this, &Workshop::OnItemUnsubscribed);
+    }
+
+    void SendQueryRequest(UGCQueryHandle_t queryHandle) {
+        SteamAPICall_t queryRequestCall = SteamUGC()->SendQueryUGCRequest(queryHandle);
+        _queryCompletedCallback.Set(queryRequestCall, this, &Workshop::OnQueryCompleted);
+    }
+
+    void GetAppDependencies(PublishedFileId_t publishedFileID) {
+        SteamAPICall_t getAppDependenciesCall = SteamUGC()->GetAppDependencies(publishedFileID);
+        _getAppDependenciesCallback.Set(getAppDependenciesCall, this, &Workshop::OnGetAppDependencies);
+    }
+
+    bool DownloadItem(PublishedFileId_t publishedFileID, bool bHighPriority) {
+        SteamAPICall_t downloadItemCall = SteamUGC()->DownloadItem(publishedFileID, bHighPriority);
+        _downloadItemCallback.Set(downloadItemCall, this, &Workshop::OnDownloadItem);
+        return true;  // Returns true if successfully queued
     }
 
 private:
@@ -200,22 +218,6 @@ private:
         }
     }
 
-    void OnGetAppDependencies(GetAppDependenciesResult_t* getAppDependenciesResult, bool bIOFailure) {
-        if (_pyGetAppDependenciesCallback != nullptr) {
-            GetAppDependenciesResult result;
-            result.result = getAppDependenciesResult->m_eResult;
-            result.publishedFileId = getAppDependenciesResult->m_nPublishedFileId;
-            result.array_num_app_dependencies = getAppDependenciesResult->m_nNumAppDependencies;
-            result.total_num_app_dependencies = getAppDependenciesResult->m_nTotalNumAppDependencies;
-            result.array_app_dependencies = new std::uint32_t[result.array_num_app_dependencies];
-            std::copy(getAppDependenciesResult->m_rgAppIDs,
-                    getAppDependenciesResult->m_rgAppIDs + result.array_num_app_dependencies,
-                    result.array_app_dependencies);
-            _pyGetAppDependenciesCallback(result);
-            delete[] result.array_app_dependencies;
-        }
-    }
-
     void OnItemSubscribed(RemoteStorageSubscribePublishedFileResult_t *itemSubscribedResult, bool bIOFailure) {
         if (_pyItemSubscribedCallback != nullptr) {
             SubscriptionResult result{itemSubscribedResult->m_eResult, itemSubscribedResult->m_nPublishedFileId};
@@ -227,6 +229,24 @@ private:
         if (_pyItemUnsubscribedCallback != nullptr) {
             SubscriptionResult result{itemUnsubscribedResult->m_eResult, itemUnsubscribedResult->m_nPublishedFileId};
             _pyItemUnsubscribedCallback(result);
+        }
+    }
+
+    void OnQueryCompleted(SteamUGCQueryCompleted_t *queryCompletedResult, bool bIOFailure) {
+        if (_pyQueryCompletedCallback != nullptr) {
+            _pyQueryCompletedCallback(*queryCompletedResult);
+        }
+    }
+
+    void OnGetAppDependencies(GetAppDependenciesResult_t *result, bool bIOFailure) {
+        if (_pyGetAppDependenciesCallback != nullptr) {
+            _pyGetAppDependenciesCallback(*result);
+        }
+    }
+
+    void OnDownloadItem(DownloadItemResult_t *result, bool bIOFailure) {
+        if (_pyDownloadItemCallback != nullptr) {
+            _pyDownloadItemCallback(*result);
         }
     }
 };
@@ -301,10 +321,15 @@ SW_PY int SteamInit() {
     bool isInitSuccess = SteamAPI_Init();
     // Set the default status response
     int status = FAILED;
+    
     // Steamworks initialized with no problems
     if (isInitSuccess) {
         status = OK;
+    }else
+    {
+        return status;
     }
+    
     // The Steam client is not running
     if (!SteamAPI_IsSteamRunning()) {
         status = ERR_NO_CLIENT;
@@ -314,9 +339,11 @@ SW_PY int SteamInit() {
         status = ERR_NO_CONNECTION;
     }
     // Steam is connected and active, so load the stats and achievements
-    if (status == OK && SteamUserStats() != NULL) {
-        SteamUserStats()->RequestCurrentStats();
-    }
+    // FULLY DEPRECATED, WILL NOT COMPILE
+    //if (status == OK && SteamUserStats() != NULL) {
+        //SteamUserStats()->RequestCurrentStats();
+    //}
+    
     // Return the Steamworks status
     return status;
 }
@@ -702,7 +729,7 @@ SW_PY uint64_t GetCurrentActionSet(uint64_t controllerHandle){
     }
     return (uint64_t) SteamInput()->GetCurrentActionSet((InputHandle_t) controllerHandle);
 }
-// Get the input type (device model) for the specified controller. 
+// Get the input type (device model) for the specified controller.
 SW_PY uint64_t GetInputTypeForHandle(uint64_t controllerHandle){
     if(SteamInput() == NULL){
         return 0;
@@ -771,6 +798,13 @@ SW_PY bool ControllerInit(bool bExplicitlyCallRunFrame) {
         return false;
     }
     return SteamInput()->Init(bExplicitlyCallRunFrame);
+}
+
+SW_PY bool SetInputActionManifestFilePath(const char *path) {
+    if (SteamInput() == NULL) {
+        return false;
+    }
+    return SteamInput()->SetInputActionManifestFilePath(path);
 }
 
 // Syncronize controllers.
@@ -1021,7 +1055,7 @@ SW_PY int GetAuthSessionTicket(char* buffer) {
         return 0;
     }
     uint32 size{};
-    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size);
+    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size, nullptr);
     return size;
 }
 
@@ -1089,7 +1123,7 @@ SW_PY bool RequestCurrentStats() {
     if (SteamUser() == NULL) {
         return false;
     }
-    return SteamUserStats()->RequestCurrentStats();
+    return true;
 }
 
 SW_PY bool SetAchievement(const char *name) {
@@ -1444,20 +1478,6 @@ SW_PY void Workshop_ClearItemInstalledCallback() {
     workshop.ClearItemInstallCallback();
 }
 
-SW_PY void Workshop_GetAppDependencies(PublishedFileId_t publishedFileID) {
-    if(SteamUGC() == NULL){
-        return;
-    }
-    workshop.GetAppDependencies(publishedFileID);
-}
-
-SW_PY void Workshop_SetGetAppDependenciesResultCallback(GetAppDependenciesResultCallback_t callback) {
-    if (SteamUGC() == NULL) {
-        return;
-    }
-    workshop.SetGetAppDependenciesResultCallback(callback);
-}
-
 SW_PY void Workshop_SetItemSubscribedCallback(RemoteStorageSubscribeFileResultCallback_t callback) {
     if (SteamUGC() == NULL) {
         return;
@@ -1491,6 +1511,59 @@ SW_PY void Workshop_SuspendDownloads(bool bSuspend) {
         return;
     }
     SteamUGC()->SuspendDownloads(bSuspend);
+}
+
+SW_PY UGCQueryHandle_t Workshop_CreateQueryUGCDetailsRequest(PublishedFileId_t * pvecPublishedFileID, uint32 unNumPublishedFileIDs) {
+    return SteamUGC()->CreateQueryUGCDetailsRequest(pvecPublishedFileID, unNumPublishedFileIDs);
+}
+
+SW_PY void Workshop_SetQueryCompletedCallback(SteamUGCQueryCompletedCallback_t callback) {
+    if (SteamUGC() == NULL) {
+        return;
+    }
+    workshop.SetQueryCompletedCallback(callback);
+}
+
+SW_PY void Workshop_SendQueryUGCRequest(UGCQueryHandle_t handle) {
+    if(SteamUGC() == NULL){
+        return;
+    }
+    workshop.SendQueryRequest(handle);
+}
+
+SW_PY bool Workshop_GetQueryUGCResult(UGCQueryHandle_t handle, uint32 index, SteamUGCDetails_t * pDetails) {
+    if(SteamUGC() == NULL){
+        return false;
+    }
+    return SteamUGC()->GetQueryUGCResult(handle, index, pDetails);
+}
+
+SW_PY void Workshop_SetGetAppDependenciesCallback(GetAppDependenciesResultCallback_t callback) {
+    if (SteamUGC() == NULL) {
+        return;
+    }
+    workshop.SetGetAppDependenciesCallback(callback);
+}
+
+SW_PY void Workshop_GetAppDependencies(PublishedFileId_t publishedFileID) {
+    if (SteamUGC() == NULL) {
+        return;
+    }
+    workshop.GetAppDependencies(publishedFileID);
+}
+
+SW_PY void Workshop_SetDownloadItemCallback(DownloadItemResultCallback_t callback) {
+    if (SteamUGC() == NULL) {
+        return;
+    }
+    workshop.SetDownloadItemCallback(callback);
+}
+
+SW_PY bool Workshop_DownloadItem(PublishedFileId_t publishedFileID, bool bHighPriority) {
+    if (SteamUGC() == NULL) {
+        return false;
+    }
+    return workshop.DownloadItem(publishedFileID, bHighPriority);
 }
 
 //-----------------------------------------------

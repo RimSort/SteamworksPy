@@ -11,9 +11,11 @@ class SteamWorkshop(object):
     _CreateItemResult_t = CFUNCTYPE(None, CreateItemResult_t)
     _SubmitItemUpdateResult_t = CFUNCTYPE(None, SubmitItemUpdateResult_t)
     _ItemInstalled_t = CFUNCTYPE(None, ItemInstalled_t)
-    _GetAppDependenciesResult_t = CFUNCTYPE(None, GetAppDependenciesResult)
     _RemoteStorageSubscribePublishedFileResult_t = CFUNCTYPE(None, SubscriptionResult)
     _RemoteStorageUnsubscribePublishedFileResult_t = CFUNCTYPE(None, SubscriptionResult)
+    _SteamUGCQueryCompleted_t = CFUNCTYPE(None, SteamUGCQueryCompleted_t)
+    _GetAppDependenciesResult_t = CFUNCTYPE(None, GetAppDependenciesResult_t)
+    _DownloadItemResult_t = CFUNCTYPE(None, DownloadItemResult_t)
 
     _CreateItemResult = None
     _SubmitItemUpdateResult = None
@@ -21,6 +23,8 @@ class SteamWorkshop(object):
     _GetAppDependenciesResult = None
     _RemoteStorageSubscribePublishedFileResult = None
     _RemoteStorageUnsubscribePublishedFileResult = None
+    _SteamUGCQueryCompleted = None
+    _DownloadItemResult = None
 
     def __init__(self, steam: object):
         self.steam = steam
@@ -66,18 +70,6 @@ class SteamWorkshop(object):
         """
         self._ItemInstalled = None
         self.steam.Workshop_ClearItemInstalledCallback()
-
-    def SetGetAppDependenciesResultCallback(self, callback: object) -> bool:
-        """Set callback for item GetAppDependencies
-
-        :param callback: callable
-        :return: bool
-        """
-        self._GetAppDependenciesResult = self._GetAppDependenciesResult_t(callback)
-        self.steam.Workshop_SetGetAppDependenciesResultCallback(
-            self._GetAppDependenciesResult
-        )
-        return True
 
     def SetItemSubscribedCallback(self, callback: object) -> bool:
         """Set callback for item subscribed
@@ -129,32 +121,6 @@ class SteamWorkshop(object):
             self.SetItemCreatedCallback(callback)
 
         self.steam.Workshop_CreateItem(app_id, filetype.value)
-
-    def GetAppDependencies(
-        self,
-        published_file_id: int,
-        callback: object = None,
-        override_callback: bool = False,
-    ) -> None:
-        """Get a list of AppID dependencies from a UGC (Workshop) item
-
-        :param published_file_id: int
-        :param callback: callable
-        :param override_callback: bool
-        :return:
-        """
-        if override_callback:
-            self.SetGetAppDependenciesResultCallback(callback)
-
-        elif callback and not self._GetAppDependenciesResult:
-            self.SetGetAppDependenciesResultCallback(callback)
-
-        if self._GetAppDependenciesResult is None:
-            raise SetupRequired(
-                "Call `SetGetAppDependenciesResultCallback` first or supply a `callback`"
-            )
-
-        self.steam.Workshop_GetAppDependencies(published_file_id)
 
     def SubscribeItem(
         self,
@@ -438,3 +404,123 @@ class SteamWorkshop(object):
             }
 
         return {}
+
+
+    def CreateQueryUGCDetailsRequest(self, published_file_ids: list) -> int:
+        """Create UGC item details query request
+
+        :param published_file_ids: int list
+        :return: int
+        """
+        published_files_c = (c_uint64 * len(published_file_ids))()
+        for index, published_file_id in enumerate(published_file_ids):
+            published_files_c[index] = c_uint64(published_file_id)
+
+        return self.steam.Workshop_CreateQueryUGCDetailsRequest(published_files_c, len(published_file_ids))
+
+
+    def SetQueryUGCRequestCallback(self, callback: object) -> bool:
+        """Set callback for UGC query
+
+        :param callback: callable
+        :return: bool
+        """
+        self._SteamUGCQueryCompleted = SteamWorkshop._SteamUGCQueryCompleted_t(callback)
+        self.steam.Workshop_SetQueryCompletedCallback(self._SteamUGCQueryCompleted)
+        return True
+
+
+    def SendQueryUGCRequest(self, handle: int, callback: object = None, override_callback: bool = False) -> None:
+        """Create UGC item details query request
+
+        :param handle: query handle
+        :param callback: callable
+        :param override_callback: bool
+        :return:
+        """
+        if override_callback:
+            self.SetQueryUGCRequestCallback(callback)
+
+        elif callback and not self._SteamUGCQueryCompleted:
+            self.SetQueryUGCRequestCallback(callback)
+
+        if self._SteamUGCQueryCompleted is None:
+            raise SetupRequired('Call `SetQueryUGCRequestCallback` first or supply a `callback`')
+
+        self.steam.Workshop_SendQueryUGCRequest(handle)
+
+
+    def GetQueryUGCResult(self, handle: int, index: int) -> SteamUGCDetails_t:
+        """Create UGC item details query request
+
+        :param handle: query handle
+        :param index: int
+        :return: SteamUGCDetails_t
+        """
+        details = SteamUGCDetails_t()
+        self.steam.Workshop_GetQueryUGCResult(handle, index, byref(details))
+        return details
+
+
+    def SetGetAppDependenciesCallback(self, callback: object) -> bool:
+        """Set callback for GetAppDependencies result
+
+        :param callback: callable
+        :return: bool
+        """
+        self._GetAppDependenciesResult = self._GetAppDependenciesResult_t(callback)
+        self.steam.Workshop_SetGetAppDependenciesCallback(self._GetAppDependenciesResult)
+        return True
+
+
+    def GetAppDependencies(self, published_file_id: int, callback: object = None,
+                           override_callback: bool = False) -> None:
+        """Get app dependencies for a workshop item
+
+        Returns a list of app IDs that the workshop item depends on.
+        These are "soft" dependencies shown on the Steam Workshop web page.
+        The callback may be called multiple times if there are more than 32 dependencies.
+
+        :param published_file_id: int
+        :param callback: callable - receives GetAppDependenciesResult_t
+        :param override_callback: bool
+        :return: None
+        """
+        if override_callback:
+            self.SetGetAppDependenciesCallback(callback)
+
+        elif callback and not self._GetAppDependenciesResult:
+            self.SetGetAppDependenciesCallback(callback)
+
+        if self._GetAppDependenciesResult is None:
+            raise SetupRequired('Call `SetGetAppDependenciesCallback` first or supply a `callback`')
+
+        self.steam.Workshop_GetAppDependencies(published_file_id)
+
+
+    def DownloadItem(self, published_file_id: int, high_priority: bool = False,
+                     callback: object = None, override_callback: bool = False) -> bool:
+        """Initiate or prioritize download of a workshop item
+
+        Downloads or updates a workshop item. If high_priority is True, this item will
+        be downloaded before any other items. The function returns immediately, and you
+        should wait for the callback before accessing the item on disk.
+
+        NOTE: The callback will be triggered for all item downloads regardless of the
+        running application, so check the appID in the callback result.
+
+        :param published_file_id: int
+        :param high_priority: bool - Set to True to pause other downloads and prioritize this one
+        :param callback: callable - receives DownloadItemResult_t when download completes (REQUIRED)
+        :param override_callback: bool
+        :return: bool - True if download initiated successfully
+        """
+        # Callback is required - set it up internally
+        if callback is None:
+            raise ValueError('callback parameter is required for DownloadItem')
+
+        if override_callback or not self._DownloadItemResult:
+            self._DownloadItemResult = self._DownloadItemResult_t(callback)
+            self.steam.Workshop_SetDownloadItemCallback(self._DownloadItemResult)
+
+        return self.steam.Workshop_DownloadItem(published_file_id, high_priority)
